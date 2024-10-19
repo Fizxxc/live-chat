@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Live Chat</title>
+</head>
+<body>
+    <div id="chat-container">
+        <ul id="messages"></ul>
+        <input id="message-input" placeholder="Type your message here..." autocomplete="off" />
+        <button id="send-button">Send</button>
+        <input type="file" id="file-input" />
+        <button id="upload-button">Upload</button>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        const messages = document.getElementById('messages');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const fileInput = document.getElementById('file-input');
+        const uploadButton = document.getElementById('upload-button');
+
+        sendButton.onclick = () => {
+            const message = messageInput.value;
+            socket.emit('chat message', message);
+            messageInput.value = '';
+        };
+
+        socket.on('chat message', (msg) => {
+            const item = document.createElement('li');
+            item.textContent = msg;
+            messages.appendChild(item);
+            window.scrollTo(0, document.body.scrollHeight);
+        });
+
+        uploadButton.onclick = () => {
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                const item = document.createElement('li');
+                item.innerHTML = `<a href="${data.filePath}" target="_blank">${file.name}</a>`;
+                messages.appendChild(item);
+                window.scrollTo(0, document.body.scrollHeight);
+            })
+            .catch(error => console.error('Error uploading file:', error));
+        };
+    </script>
+</body>
+</html>
